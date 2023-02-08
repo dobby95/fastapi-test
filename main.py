@@ -1,104 +1,84 @@
 from typing import Union
 
-from fastapi import FastAPI, Path, Query
+from fastapi import FastAPI, Body, Path
+from pydantic import BaseModel
 
 app = FastAPI()
 
+
+class Item(BaseModel):
+    name: str
+    description: Union[str, None] = None
+    price: float
+    tax: Union[float, None] = None
+
+
+class User(BaseModel):
+    username: str
+    full_name: Union[str, None] = None
 
 @app.get("/")
 async def main():
     return {"message": "Hello World"}
 
 
-@app.get("/items/{item_id}")
-async def read_items(
+@app.put("/items/{item_id}")
+async def update_item(
     item_id: int = Path(title="The ID of the item to get"),
-    q: Union[str, None] = Query(default=None, alias = "item-query")
+    q: Union[str, None] = None,
+    item: Union[Item, None] = None
 ):
-    """
-    메타데이터 선언.
-    Query에 동일한 매개변수를 선언할 수 있음
-    :param item_id:
-    :param q:
-    :return:
-    """
     results = {"item_id": item_id}
     if q:
-        results.update({"q":q})
+        results.update({"q": q})
+    if item:
+        results.update({"item": item})
+    return results
+
+@app.put("/items2/{item_id}")
+async def update_item2(item_id: int, item: Item, user: User):
+    """
+    여러개의 Body Parameter 도 가능
+    :param item_id:
+    :param item:
+    :param user:
+    :return:
+    """
+    results = {"item_id": item_id, "item": item, "user": user}
     return results
 
 
-@app.get("/items2/{item_id}")
-async def read_items2(q: str, item_id: int = Path(title="The ID of the item to get")):
+@app.put("/items3/{item_id}")
+async def update_item3(item_id: int, item: Item, user: User, importance: int = Body()):
     """
-    기본값이 없는 q를 뒤에 둘 경우 Error 발생 --> 이를 방지하기 위해선 순서를 바꿔줘야함
-    FastAPI에서 매개변수 순서가 중요하지 않음
+    query와 path 와 같이 추가 데이터에 대해 받는것을 Body를 통해 받을 수 있음. 단 싱글 밸류임
     :param item_id:
-    :param q:
+    :param item:
+    :param user:
+    :param importance:
     :return:
     """
-    results = {"item_id": item_id}
-    if q:
-        results.update({"q":q})
+    results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
     return results
 
 
-@app.get("/items3/{item_id}")
-async def read_items3(*, item_id: int = Path(title="The ID of the item to get"), q: str):
-    """
-    * 는 아무런 행동도 하지 않음. 다만, * 추가를 통해 기본값이 없는 q가 정상적으로 작동 할 수 잇음
-    :param item_id:
-    :param q:
-    :return:
-    """
-    results = {"item_id": item_id}
-    if q:
-        results.update({"q":q})
-    return results
-
-
-@app.get("/items4/{item_id}")
-async def read_items4(*, item_id: int = Path(title="The ID of the item to get", ge=1), q: str):
-    """
-    숫자 검증. ge = greater and equal
-    :param item_id:
-    :param q:
-    :return:
-    """
-    results = {"item_id": item_id}
-    if q:
-        results.update({"q":q})
-    return results
-
-
-@app.get("/items5/{item_id}")
-async def read_items5(*, item_id: int = Path(title="The ID of the item to get", gt=0, le=1000), q: str):
-    """
-    숫자 검증. gt = greater then, le = less equal
-    :param item_id:
-    :param q:
-    :return:
-    """
-    results = {"item_id": item_id}
-    if q:
-        results.update({"q":q})
-    return results
-
-
-@app.get("/items6/{item_id}")
-async def read_items6(
-        *,
-        item_id: int = Path(title="The ID of the item to get", ge=0, le=1000),
-        q: str,
-        size: float = Query(gt=0, lt=10.5)
+@app.put("/items4/{item_id}")
+async def update_item4(
+        item_id: int,
+        item: Item,
+        user: User,
+        importance: int = Body(gt=0),
+        q: Union[str, None] = None
 ):
-    """
-    숫자 검증.
-    :param item_id:
-    :param q:
-    :return:
-    """
-    results = {"item_id": item_id}
+    results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
     if q:
-        results.update({"q":q})
+        results.update({"q": q})
     return results
+
+
+
+@app.put("/items5/{item_id}")
+async def update_item5(item_id: int, item: Item = Body(embed=True)):
+    results = {"item_id": item_id, "item": item}
+    return results
+
